@@ -455,11 +455,14 @@ final class NativeGaloisCounterMode extends FeedbackCipher {
 
         byte[] aad = ((aadBuffer == null || aadBuffer.size() == 0) ? emptyAAD : aadBuffer.toByteArray());
 
-        nativeCrypto.GCMEncrypt(key, key.length,
+        int ret = nativeCrypto.GCMEncrypt(key, key.length,
               iv, iv.length,
               in, inOfs, len,
               out, outOfs,
               aad, aad.length, tagLenBytes);
+        if (ret == -1) {
+            throw new ProviderException("Error in Native GaloisCounterMode");
+        }
 
         return (len + tagLenBytes);
     }
@@ -550,10 +553,11 @@ final class NativeGaloisCounterMode extends FeedbackCipher {
                 in, inOfs, len,
                 out, outOfs,
                 aad, aad.length, tagLenBytes);
-
-        if (ret == -1) {
-            throw new AEADBadTagException("Tag mismatch!");
-        }
+        if (ret == -2) {
+            throw new AEADBadTagException("Tag mismatch!");	            
+        } else if (ret == -1) {
+            throw new ProviderException("Error in Native GaloisCounterMode");
+        }	  
 
         return ret;
     }
