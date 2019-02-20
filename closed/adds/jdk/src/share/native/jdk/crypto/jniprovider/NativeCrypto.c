@@ -1038,11 +1038,11 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
         return -1;
     }
 
-    RSA* privateRSACrtKey = (*OSSL_RSA_new)();
-
     BIGNUM* nBN = convertJavaBItoBN(nNative, nLen);
     BIGNUM* eBN = convertJavaBItoBN(eNative, eLen);
     BIGNUM* dBN = convertJavaBItoBN(dNative, dLen);
+
+    RSA* privateRSACrtKey = (*OSSL_RSA_new)();
 
     if (privateRSACrtKey == NULL || nBN == NULL || eBN == NULL || dBN == NULL) {
 
