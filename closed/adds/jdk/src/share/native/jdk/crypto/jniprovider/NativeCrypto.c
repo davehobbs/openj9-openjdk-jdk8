@@ -167,7 +167,6 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
   (JNIEnv *env, jclass thisObj){
 
     void *handle;
-    char *error;
     typedef const char* OSSL_version_t(int);
 
      // Determine the version of OpenSSL.
@@ -919,6 +918,7 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
 
     unsigned char* nNative;
     unsigned char* eNative;
+    RSA* publicRSAKey = (*OSSL_RSA_new)();
 
     nNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, n, 0));
     if (nNative == NULL) {
@@ -930,8 +930,6 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
         (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, 0);
         return -1;
     }
-
-    RSA* publicRSAKey = (*OSSL_RSA_new)();
 
     BIGNUM* nBN = convertJavaBItoBN(nNative, nLen);
     BIGNUM* eBN = convertJavaBItoBN(eNative, eLen);
