@@ -630,10 +630,10 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 COMPILER_VERSION_STRING
+BUILD_OPENSSL
 WITH_OPENSSL
 OPENSSL_DIR
 OPENSSL_BUNDLE_LIB_PATH
-BUILD_OPENSSL
 OPENSSL_LIBS
 OPENSSL_CFLAGS
 CCACHE
@@ -2048,7 +2048,7 @@ Optional Packages:
                           use this java binary for running the sjavac
                           background server [Boot JDK java]
   --with-ccache-dir       where to store ccache files [~/.ccache]
-  --with-openssl          Use either fetched | system | <path to openssl 1.1.0
+  --with-openssl          Use either fetched | system | <path to openssl 1.0.2
                           (and above)
 
 Some influential environment variables:
@@ -4475,7 +4475,7 @@ VS_SDK_PLATFORM_NAME_2017=
 
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1550241569
+DATE_WHEN_GENERATED=1550676261
 
 ###############################################################################
 #
@@ -54848,9 +54848,33 @@ $as_echo "$as_me: The path of OPENSSL_DIR, which resolves as \"$path\", is inval
             fi
           else
             if test -s "$OPENSSL_DIR/lib/${LIBRARY_PREFIX}crypto${SHARED_LIBRARY_SUFFIX}" ; then
-              OPENSSL_BUNDLE_LIB_PATH="$OPENSSL_DIR/lib"
+              if test "x$BUNDLE_OPENSSL" = xyes ; then
+                # On Mac OSX, create local copy of the crypto library to update @rpath
+                # as the default is /usr/local/lib.
+                if test "x$OPENJDK_BUILD_OS" = xmacosx ; then
+                  LOCAL_CRYPTO="$TOPDIR/openssl"
+                  $MKDIR -p "${LOCAL_CRYPTO}"
+                  $CP "${OPENSSL_DIR}/libcrypto.1.1.dylib" "${LOCAL_CRYPTO}"
+                  $CP -a "${OPENSSL_DIR}/libcrypto.dylib" "${LOCAL_CRYPTO}"
+                  OPENSSL_BUNDLE_LIB_PATH="${LOCAL_CRYPTO}"
+                else
+                  OPENSSL_BUNDLE_LIB_PATH="${OPENSSL_DIR}/lib"
+                fi
+              fi
             elif test -s "$OPENSSL_DIR/${LIBRARY_PREFIX}crypto${SHARED_LIBRARY_SUFFIX}" ; then
-              OPENSSL_BUNDLE_LIB_PATH="$OPENSSL_DIR"
+              if test "x$BUNDLE_OPENSSL" = xyes ; then
+                # On Mac OSX, create local copy of the crypto library to update @rpath
+                # as the default is /usr/local/lib.
+                if test "x$OPENJDK_BUILD_OS" = xmacosx ; then
+                  LOCAL_CRYPTO="$TOPDIR/openssl"
+                  $MKDIR -p "${LOCAL_CRYPTO}"
+                  $CP "${OPENSSL_DIR}/libcrypto.1.1.dylib" "${LOCAL_CRYPTO}"
+                  $CP -a "${OPENSSL_DIR}/libcrypto.dylib" "${LOCAL_CRYPTO}"
+                  OPENSSL_BUNDLE_LIB_PATH="${LOCAL_CRYPTO}"
+                else
+                  OPENSSL_BUNDLE_LIB_PATH="${OPENSSL_DIR}"
+                fi
+              fi
             else
               { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
