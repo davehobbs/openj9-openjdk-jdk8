@@ -459,7 +459,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVCP_DLL],
 AC_DEFUN([CONFIGURE_OPENSSL],
 [
   AC_ARG_WITH(openssl, [AS_HELP_STRING([--with-openssl],
-    [Use either fetched | system | <path to openssl 1.1.0 (and above)])])
+    [Use either fetched | system | <path to openssl 1.0.2 (and above)])])
 
   AC_ARG_ENABLE(openssl-bundling, [AS_HELP_STRING([--enable-openssl-bundling],
       [enable bundling of the openssl crypto library with the jdk build])])
@@ -541,9 +541,33 @@ AC_DEFUN([CONFIGURE_OPENSSL],
             fi
           else
             if test -s "$OPENSSL_DIR/lib/${LIBRARY_PREFIX}crypto${SHARED_LIBRARY_SUFFIX}" ; then
-              OPENSSL_BUNDLE_LIB_PATH="$OPENSSL_DIR/lib"
+              if test "x$BUNDLE_OPENSSL" = xyes ; then
+                # On Mac OSX, create local copy of the crypto library to update @rpath
+                # as the default is /usr/local/lib.
+                if test "x$OPENJDK_BUILD_OS" = xmacosx ; then
+                  LOCAL_CRYPTO="$TOPDIR/openssl"
+                  $MKDIR -p "${LOCAL_CRYPTO}"
+                  $CP "${OPENSSL_DIR}/libcrypto.1.1.dylib" "${LOCAL_CRYPTO}"
+                  $CP -a "${OPENSSL_DIR}/libcrypto.dylib" "${LOCAL_CRYPTO}"
+                  OPENSSL_BUNDLE_LIB_PATH="${LOCAL_CRYPTO}"
+                else
+                  OPENSSL_BUNDLE_LIB_PATH="${OPENSSL_DIR}/lib"
+                fi
+              fi
             elif test -s "$OPENSSL_DIR/${LIBRARY_PREFIX}crypto${SHARED_LIBRARY_SUFFIX}" ; then
-              OPENSSL_BUNDLE_LIB_PATH="$OPENSSL_DIR"
+              if test "x$BUNDLE_OPENSSL" = xyes ; then
+                # On Mac OSX, create local copy of the crypto library to update @rpath
+                # as the default is /usr/local/lib.
+                if test "x$OPENJDK_BUILD_OS" = xmacosx ; then
+                  LOCAL_CRYPTO="$TOPDIR/openssl"
+                  $MKDIR -p "${LOCAL_CRYPTO}"
+                  $CP "${OPENSSL_DIR}/libcrypto.1.1.dylib" "${LOCAL_CRYPTO}"
+                  $CP -a "${OPENSSL_DIR}/libcrypto.dylib" "${LOCAL_CRYPTO}"
+                  OPENSSL_BUNDLE_LIB_PATH="${LOCAL_CRYPTO}"
+                else
+                  OPENSSL_BUNDLE_LIB_PATH="${OPENSSL_DIR}"
+                fi
+              fi
             else
               AC_MSG_RESULT([no])
               AC_MSG_ERROR([Unable to find crypto library to bundle in specified location $OPENSSL_DIR])
@@ -562,10 +586,10 @@ AC_DEFUN([CONFIGURE_OPENSSL],
     AC_MSG_RESULT([$BUNDLE_OPENSSL])
   fi
 
-  AC_SUBST(BUILD_OPENSSL)
   AC_SUBST(OPENSSL_BUNDLE_LIB_PATH)
-  AC_SUBST(OPENSSL_CFLAGS)
   AC_SUBST(OPENSSL_DIR)
   AC_SUBST(WITH_OPENSSL)
+  AC_SUBST(BUILD_OPENSSL)
+  AC_SUBST(OPENSSL_CFLAGS)
 ])
 

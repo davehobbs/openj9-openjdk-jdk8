@@ -34,28 +34,21 @@ import sun.reflect.CallerSensitive;
 
 public class NativeCrypto {
 
-    private static boolean loaded = false;
-
-    static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                try {
-                    System.loadLibrary("jncrypto"); // check for native library
-
-                    // load OpenSSL crypto library dynamically.
-                    if (loadCrypto() == 0) { 
-                        loaded = true;
-                    } else {
-                        loaded = false;
-                    }
-                } catch (UnsatisfiedLinkError usle) {
-                    loaded = false;
+    private static final boolean loaded = AccessController.doPrivileged(
+            (PrivilegedAction<Boolean>) () -> {
+            Boolean isLoaded = Boolean.FALSE;
+            try {
+                System.loadLibrary("jncrypto"); // check for native library
+                // load OpenSSL crypto library dynamically.
+                if (loadCrypto() == 0) {
+                    isLoaded = Boolean.TRUE;
                 }
-                return null;
+            } catch (UnsatisfiedLinkError usle) { 
+                // Return that isLoaded is false (default set above)
             }
-        });
-
-    }
+            
+            return isLoaded;
+        }).booleanValue();
     
     public static final boolean isLoaded() {
         return loaded;
@@ -74,10 +67,6 @@ public class NativeCrypto {
             throw new SecurityException("NativeCrypto");
         }
         return new NativeCrypto();
-    }
-
-    public static final boolean isLoaded() {
-        return loaded;
     }
 
     /* Native digest interfaces */
@@ -107,28 +96,28 @@ public class NativeCrypto {
     public final native long CBCCreateContext(long nativeBuffer,
                                               long nativeBuffer2);
 
-    public final native long CBCDestroyContext(long context);
+    public final native int CBCDestroyContext(long context);
 
-    public final native void CBCInit(long context,
+    public final native int CBCInit(long context,
                                     int mode,
                                     byte[] iv,
                                     int ivlen,
                                     byte[] key,
                                     int keylen);
 
-    public final native int  CBCUpdate(long context,
-                                       byte[] input,
-                                       int inputOffset,
-                                       int inputLen,
-                                       byte[] output,
-                                       int outputOffset);
+    public final native int CBCUpdate(long context,
+                                      byte[] input,
+                                      int inputOffset,
+                                      int inputLen,
+                                      byte[] output,
+                                      int outputOffset);
 
-    public final native int  CBCFinalEncrypt(long context,
-                                             byte[] input,
-                                             int inputOffset,
-                                             int inputLen,
-                                             byte[] output,
-                                             int outputOffset);
+    public final native int CBCFinalEncrypt(long context,
+                                            byte[] input,
+                                            int inputOffset,
+                                            int inputLen,
+                                            byte[] output,
+                                            int outputOffset);
 
     /* Native GCM interfaces */
     public final native int GCMEncrypt(byte[] key,

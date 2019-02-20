@@ -32,18 +32,30 @@
 /* Load the crypto library (return NULL on error) */
 void * load_crypto_library() {
     void * result = NULL;
-    const char *libname;
 
-#ifdef MACOSX
-    libname = "libcrypto.dylib";
+#ifdef AIX
+    const char *libname = "libcrypto64.so.1.1";
+    const char *oldname = "libcrypto.so.1.0.0";
+    const char *symlink = NULL;                       // No symbolic links on aix
+#elif MACOSX
+    const char *libname = "libcrypto.1.1.dylib";
+    const char *oldname = "libcrypto.1.0.0.dylib";
+    const char *symlink = NULL;                       // No symbolic links on mac
 #else
-    libname = "libcrypto.so";
+    const char *libname = "libcrypto.so.1.1";         // Library name for OpenSSL 1.1.0 and 1.1.1
+    const char *oldname = "libcrypto.so.1.0.0";       // Library name for OpenSSL 1.0.2
+    const char *symlink = "libcrypto.so";             // Library name for possible symbolic links
 #endif
 
+    // Check to see if we can load the library
     result = dlopen (libname,  RTLD_NOW);
-    
     if (result == NULL) {
-        fputs (dlerror(), stderr);
+        // Failed to read library so try to load the older library
+        result = dlopen (oldname,  RTLD_NOW);
+        if (result == NULL && symlink != NULL) {
+            // Failed to load older library so try to load the symlink
+            result = dlopen (symlink,  RTLD_NOW);
+        }
     }
 
     return result;
@@ -56,13 +68,6 @@ void unload_crypto_library(void *handle) {
 
 /* Find the symbol in the crypto library (return NULL if not found) */
 void * find_crypto_symbol(void *handle, const char *symname) {
-    void * symptr;
-
-    symptr =  dlsym(handle, symname);
-
-    if (symptr == NULL) {
-        fputs (dlerror(), stderr);
-    }
-
-    return symptr;
+    return  dlsym(handle, symname);
 }
+

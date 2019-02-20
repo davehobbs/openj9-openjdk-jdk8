@@ -30,7 +30,7 @@
 void * load_crypto_library() {
     void * result = NULL;
     const char *libname;
-    const char *oldname;
+    const char *oldname = "libeay32.dll";
 
 #ifdef WIN32
     libname = "libcrypto-1_1.dll";
@@ -38,7 +38,6 @@ void * load_crypto_library() {
     libname = "libcrypto-1_1-x64.dll"
 #endif
 
-    oldname = "libeay32.dll";
 
     result = LoadLibrary(libname);
     
@@ -62,3 +61,4 @@ void * find_crypto_symbol(void *handle, const char *symname) {
 
     return symptr;
 }
+
