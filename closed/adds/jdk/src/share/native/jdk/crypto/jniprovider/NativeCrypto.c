@@ -918,7 +918,10 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
 
     unsigned char* nNative;
     unsigned char* eNative;
-    RSA* publicRSAKey = (*OSSL_RSA_new)();
+    BIGNUM* nBN; 
+    BIGNUM* eBN;
+    int ret;
+    RSA* publicRSAKey;
 
     nNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, n, 0));
     if (nNative == NULL) {
@@ -931,8 +934,9 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
         return -1;
     }
 
-    BIGNUM* nBN = convertJavaBItoBN(nNative, nLen);
-    BIGNUM* eBN = convertJavaBItoBN(eNative, eLen);
+    publicRSAKey = (*OSSL_RSA_new)();
+    nBN = convertJavaBItoBN(nNative, nLen);
+    eBN = convertJavaBItoBN(eNative, eLen);
 
     if (publicRSAKey == NULL || nBN == NULL || eBN == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, 0);
@@ -940,7 +944,7 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
         return -1;
     }
 
-    int ret = (*OSSL_RSA_set0_key)(publicRSAKey, nBN, eBN, NULL);
+    ret = (*OSSL_RSA_set0_key)(publicRSAKey, nBN, eBN, NULL);
 
     (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, e, eNative, 0);
@@ -969,6 +973,15 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
     unsigned char* dpNative;
     unsigned char* dqNative;
     unsigned char* qinvNative;
+    BIGNUM* nBN;
+    BIGNUM* eBN;
+    BIGNUM* dBN;
+    BIGNUM* pBN;
+    BIGNUM* qBN;
+    BIGNUM* dpBN
+    BIGNUM* dqBN;
+    BIGNUM* qinvBN;
+    int ret;
 
     nNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, n, 0));
     if (nNative == NULL) {
@@ -1038,9 +1051,9 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
         return -1;
     }
 
-    BIGNUM* nBN = convertJavaBItoBN(nNative, nLen);
-    BIGNUM* eBN = convertJavaBItoBN(eNative, eLen);
-    BIGNUM* dBN = convertJavaBItoBN(dNative, dLen);
+    nBN = convertJavaBItoBN(nNative, nLen);
+    eBN = convertJavaBItoBN(eNative, eLen);
+    dBN = convertJavaBItoBN(dNative, dLen);
 
     RSA* privateRSACrtKey = (*OSSL_RSA_new)();
 
@@ -1057,12 +1070,10 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
         return -1;
     }
 
-    int ret;
-
     ret = (*OSSL_RSA_set0_key)(privateRSACrtKey, nBN, eBN, dBN);
 
-    BIGNUM* pBN = convertJavaBItoBN(pNative, pLen);
-    BIGNUM* qBN = convertJavaBItoBN(qNative, qLen);
+    pBN = convertJavaBItoBN(pNative, pLen);
+    qBN = convertJavaBItoBN(qNative, qLen);
 
     if (ret == 0 || pBN == NULL || qBN == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, 0);
@@ -1078,9 +1089,9 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
 
     ret = (*OSSL_RSA_set0_factors)(privateRSACrtKey, pBN, qBN);
 
-    BIGNUM* dpBN = convertJavaBItoBN(dpNative, dpLen);
-    BIGNUM* dqBN = convertJavaBItoBN(dqNative, dqLen);
-    BIGNUM* qinvBN = convertJavaBItoBN(qinvNative, qinvLen);
+    dpBN = convertJavaBItoBN(dpNative, dpLen);
+    dqBN = convertJavaBItoBN(dqNative, dqLen);
+    qinvBN = convertJavaBItoBN(qinvNative, qinvLen);
 
     if (ret == 0 || dpBN == NULL || dqBN == NULL || qinvBN == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, 0);
@@ -1133,6 +1144,8 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_RSAEP
 
     unsigned char* kNative;
     unsigned char* mNative;
+    int msg_len;
+    RSA* rsaKey;
 
     kNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, k, 0));
     if (kNative == NULL) {
@@ -1145,10 +1158,10 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_RSAEP
         return -1;
     }
 
-    RSA* rsaKey = (RSA*)publicRSAKey;
+    rsaKey = (RSA*)publicRSAKey;
 
     // OSSL_RSA_public_decrypt returns -1 on error
-    int msg_len = (*OSSL_RSA_public_decrypt)(kLen, kNative, mNative, rsaKey, RSA_NO_PADDING);
+    msg_len = (*OSSL_RSA_public_decrypt)(kLen, kNative, mNative, rsaKey, RSA_NO_PADDING);
 
     (*env)->ReleasePrimitiveArrayCritical(env, k, kNative, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, m, mNative, 0);
@@ -1168,6 +1181,8 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_RSADP
 
     unsigned char* kNative;
     unsigned char* mNative;
+    RSA* rsaKey;
+    int msg_len;
 
     kNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, k, 0));
     if (kNative == NULL) {
@@ -1180,10 +1195,10 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_RSADP
         return -1;
     }
 
-    RSA* rsaKey = (RSA*)privateRSAKey;
+    rsaKey = (RSA*)privateRSAKey;
 
     // OSSL_RSA_private_encrypt returns -1 on error
-    int msg_len = (*OSSL_RSA_private_encrypt)(kLen, kNative, mNative, rsaKey, RSA_NO_PADDING);
+    msg_len = (*OSSL_RSA_private_encrypt)(kLen, kNative, mNative, rsaKey, RSA_NO_PADDING);
 
     if (verify != -1 && msg_len != -1) {
         if (verify == kLen) {
@@ -1224,6 +1239,9 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_RSADP
  * into an OpenSSL BIGNUM
  */
 BIGNUM* convertJavaBItoBN(unsigned char* in, int len) {
+
+    BIGNUM* bn;
+
     // first bit is neg
     int neg = (in[0] & 0x80);
     if (neg != 0) {
@@ -1238,7 +1256,7 @@ BIGNUM* convertJavaBItoBN(unsigned char* in, int len) {
             }
         }
     }
-    BIGNUM* bn = (*OSSL_BN_bin2bn)(in, len, NULL);
+    bn = (*OSSL_BN_bin2bn)(in, len, NULL);
     if (bn != NULL) {
         (*OSSL_BN_set_negative)(bn, neg);
     }
