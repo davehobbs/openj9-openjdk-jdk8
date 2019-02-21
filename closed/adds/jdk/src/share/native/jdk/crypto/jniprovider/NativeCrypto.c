@@ -978,9 +978,10 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
     BIGNUM* dBN;
     BIGNUM* pBN;
     BIGNUM* qBN;
-    BIGNUM* dpBN
+    BIGNUM* dpBN;
     BIGNUM* dqBN;
     BIGNUM* qinvBN;
+    RSA* privateRSACrtKey;
     int ret;
 
     nNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, n, 0));
@@ -1055,7 +1056,7 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPrivat
     eBN = convertJavaBItoBN(eNative, eLen);
     dBN = convertJavaBItoBN(dNative, dLen);
 
-    RSA* privateRSACrtKey = (*OSSL_RSA_new)();
+    privateRSACrtKey = (*OSSL_RSA_new)();
 
     if (privateRSACrtKey == NULL || nBN == NULL || eBN == NULL || dBN == NULL) {
 
