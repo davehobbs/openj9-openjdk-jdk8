@@ -70,6 +70,9 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
         this.digestLength = digestLength;
         this.algIndx = algIndx;
         this.context = nativeCrypto.DigestCreateContext(0, algIndx);
+        if (this.context == -1) {
+            throw new ProviderException("Error in Native Digest");
+        }
     }
 
     // return digest length. See JCA doc.
@@ -89,7 +92,7 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
     }
 
     // array update. See JCA doc.
-    protected final void engineUpdate(byte[] b, int ofs, int len) {
+    synchronized protected final void engineUpdate(byte[] b, int ofs, int len) {
         if (len == 0) {
             return;
         }
@@ -100,11 +103,14 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
 
         bytesProcessed += len;
 
-        nativeCrypto.DigestUpdate(context, b, ofs, len);
+        int ret = nativeCrypto.DigestUpdate(context, b, ofs, len);
+        if (ret == -1) {
+            throw new ProviderException("Error in Native Digest");
+        }
     }
 
     // reset this object. See JCA doc.
-    protected final void engineReset() {
+    synchronized protected final void engineReset() {
         if (bytesProcessed == 0) {
             // already reset, ignore
             return;
@@ -115,7 +121,7 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
     }
 
     // return the digest. See JCA doc.
-    protected final byte[] engineDigest() {
+    synchronized protected final byte[] engineDigest() {
         byte[] b = new byte[digestLength];
 
         try {
@@ -129,7 +135,7 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
     }
 
     // return the digest in the specified array. See JCA doc.
-    protected final int engineDigest(byte[] out, int ofs, int len)
+    synchronized protected final int engineDigest(byte[] out, int ofs, int len)
             throws DigestException {
 
         if (len < digestLength) {
@@ -141,15 +147,20 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
             throw new DigestException("Buffer too short to store digest");
         }
 
-        nativeCrypto.DigestComputeAndReset(context, null, 0, 0, out, ofs, len);
-
+        int ret = nativeCrypto.DigestComputeAndReset(context, null, 0, 0, out, ofs, len);
+        if (ret == -1) {
+            throw new DigestException("Error in Native Digest");
+        }
         bytesProcessed = 0;
         return digestLength;
     }
 
-    public Object clone() throws CloneNotSupportedException {
+    synchronized public Object clone() throws CloneNotSupportedException {
         NativeDigest copy = (NativeDigest) super.clone();
         copy.context    = nativeCrypto.DigestCreateContext(context, algIndx);
+        if (copy.context == -1) {
+            throw new ProviderException("Error in Native Digest");
+        }
         return copy;
     }
 

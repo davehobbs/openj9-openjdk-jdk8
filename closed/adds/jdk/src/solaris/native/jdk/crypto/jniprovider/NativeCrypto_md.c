@@ -33,18 +33,19 @@
 void * load_crypto_library() {
     void * result = NULL;
 
+// Library names for OpenSSL 1.1.1, 1.1.0, 1.0.2 and possible symbolic links
 #ifdef AIX
     const char *libname = "libcrypto64.so.1.1";
     const char *oldname = "libcrypto.so.1.0.0";
-    const char *symlink = NULL;                       // No symbolic links on aix
+    const char *symlink = "libcrypto.so";
 #elif MACOSX
     const char *libname = "libcrypto.1.1.dylib";
     const char *oldname = "libcrypto.1.0.0.dylib";
-    const char *symlink = NULL;                       // No symbolic links on mac
+    const char *symlink = "libcrypto.dylib"
 #else
-    const char *libname = "libcrypto.so.1.1";         // Library name for OpenSSL 1.1.0 and 1.1.1
-    const char *oldname = "libcrypto.so.1.0.0";       // Library name for OpenSSL 1.0.2
-    const char *symlink = "libcrypto.so";             // Library name for possible symbolic links
+    const char *libname = "libcrypto.so.1.1";
+    const char *oldname = "libcrypto.so.1.0.0";
+    const char *symlink = "libcrypto.so";
 #endif
 
     // Check to see if we can load the library
