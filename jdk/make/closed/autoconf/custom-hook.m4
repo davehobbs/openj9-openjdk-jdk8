@@ -467,7 +467,7 @@ AC_DEFUN([CONFIGURE_OPENSSL],
   WITH_OPENSSL=yes
 
   if test "x$with_openssl" = x ; then
-    # User doesn't want to build with OpenSSL.. Ensure that jncrypto library is not built
+    # User doesn't want to build with OpenSSL. No need to build openssl libraries
     WITH_OPENSSL=no
   else
     AC_MSG_CHECKING([for OPENSSL])
@@ -490,11 +490,12 @@ AC_DEFUN([CONFIGURE_OPENSSL],
       if test -d "$SRC_ROOT/openssl" ; then
         OPENSSL_DIR="$SRC_ROOT/openssl"
         OPENSSL_CFLAGS="-I${OPENSSL_DIR}/include"
-        if test -s $OPENSSL_DIR/${LIBRARY_PREFIX}crypto${SHARED_LIBRARY_SUFFIX}; then
+        if test -s "$OPENSSL_DIR/${LIBRARY_PREFIX}crypto${SHARED_LIBRARY_SUFFIX}" ; then
           BUILD_OPENSSL=no
         else
           BUILD_OPENSSL=yes
         fi
+
         if test "x$BUNDLE_OPENSSL" = xyes ; then
           OPENSSL_BUNDLE_LIB_PATH="$OPENSSL_DIR"
         fi
@@ -502,17 +503,24 @@ AC_DEFUN([CONFIGURE_OPENSSL],
       else
         AC_MSG_RESULT([no])
         printf "$SRC_ROOT/openssl is not found.\n"
-        printf "  run get_source.sh --openssl-version=<version as 1.0.2p or later>\n"
+        printf "  run get_source.sh --openssl-version=<version as 1.0.2 or later>\n"
         printf "  Then, run configure with '--with-openssl=fetched'\n"
         AC_MSG_ERROR([Cannot continue])
       fi
 
     # Process --with-openssl=system
     elif test "x$with_openssl" = xsystem ; then
+      if test "x$OPENJDK_BUILD_OS" = xwindows ; then
+        AC_MSG_RESULT([no])
+        printf "On Windows, value of \"system\" is currently not supported with --with-openssl. Please build OpenSSL using VisualStudio outside cygwin and specify the path with --with-openssl\n"
+        AC_MSG_ERROR([Cannot continue])
+      fi
+
       # We can use the system installed openssl only when it is package installed.
       # If not package installed, fail with an error message.
       # PKG_CHECK_MODULES will setup the variable OPENSSL_CFLAGS and OPENSSL_LIB when successful.
       PKG_CHECK_MODULES(OPENSSL, openssl >= 1.0.2, [FOUND_OPENSSL=yes], [FOUND_OPENSSL=no])
+
       if test "x$FOUND_OPENSSL" != xyes; then
         AC_MSG_ERROR([Unable to find openssl 1.0.2(and above) installed on System. Please use other options for '--with-openssl'])
       fi
@@ -548,6 +556,7 @@ AC_DEFUN([CONFIGURE_OPENSSL],
                   LOCAL_CRYPTO="$TOPDIR/openssl"
                   $MKDIR -p "${LOCAL_CRYPTO}"
                   $CP "${OPENSSL_DIR}/libcrypto.1.1.dylib" "${LOCAL_CRYPTO}"
+                  $CP "${OPENSSL_DIR}/libcrypto.1.0.0.dylib" "${LOCAL_CRYPTO}"
                   $CP -a "${OPENSSL_DIR}/libcrypto.dylib" "${LOCAL_CRYPTO}"
                   OPENSSL_BUNDLE_LIB_PATH="${LOCAL_CRYPTO}"
                 else
@@ -562,6 +571,7 @@ AC_DEFUN([CONFIGURE_OPENSSL],
                   LOCAL_CRYPTO="$TOPDIR/openssl"
                   $MKDIR -p "${LOCAL_CRYPTO}"
                   $CP "${OPENSSL_DIR}/libcrypto.1.1.dylib" "${LOCAL_CRYPTO}"
+                  $CP "${OPENSSL_DIR}/libcrypto.1.0.0.dylib" "${LOCAL_CRYPTO}"
                   $CP -a "${OPENSSL_DIR}/libcrypto.dylib" "${LOCAL_CRYPTO}"
                   OPENSSL_BUNDLE_LIB_PATH="${LOCAL_CRYPTO}"
                 else

@@ -32,31 +32,38 @@
 /* Load the crypto library (return NULL on error) */
 void * load_crypto_library() {
     void * result = NULL;
+    int flags = RTLD_NOW;
+    size_t i = 0;
 
-// Library names for OpenSSL 1.1.1, 1.1.0, 1.0.2 and possible symbolic links
+    // Library names for OpenSSL 1.1.1, 1.1.0, 1.0.2 and symbolic links
+    const char *libNames[] = {
 #ifdef AIX
-    const char *libname = "libcrypto64.so.1.1";
-    const char *oldname = "libcrypto.so.1.0.0";
-    const char *symlink = "libcrypto.so";
+    "libcrypto.a(libcrypto64.so.1.1)",
+    "libcrypto.so.1.1",
+    "libcrypto.so.1.0.0",
+    "libcrypto.a(libcrypto64.so)",
 #elif MACOSX
-    const char *libname = "libcrypto.1.1.dylib";
-    const char *oldname = "libcrypto.1.0.0.dylib";
-    const char *symlink = "libcrypto.dylib"
+    "libcrypto.1.1.dylib",
+    "libcrypto.1.0.0.dylib",
+    "libcrypto.dylib"
 #else
-    const char *libname = "libcrypto.so.1.1";
-    const char *oldname = "libcrypto.so.1.0.0";
-    const char *symlink = "libcrypto.so";
+    "libcrypto.so.1.1",
+    "libcrypto.so.1.0.0",
+    "libcrypto.so",
 #endif
+    };
 
-    // Check to see if we can load the library
-    result = dlopen (libname,  RTLD_NOW);
-    if (result == NULL) {
-        // Failed to read library so try to load the older library
-        result = dlopen (oldname,  RTLD_NOW);
-        if (result == NULL && symlink != NULL) {
-            // Failed to load older library so try to load the symlink
-            result = dlopen (symlink,  RTLD_NOW);
-        }
+    // Check to see if we can load the libraries in the order set out above
+    for (i = 0; (NULL == result) && (i < sizeof(libNames) / sizeof(libNames[0])); i++) {
+        const char * libName = libNames[i];
+        flags = RTLD_NOW;
+
+# ifdef _AIX
+        if (NULL != strrchr(libName, '('))
+            flags |= RTLD_MEMBER;
+# endif
+
+        result = dlopen (libName,  flags);
     }
 
     return result;

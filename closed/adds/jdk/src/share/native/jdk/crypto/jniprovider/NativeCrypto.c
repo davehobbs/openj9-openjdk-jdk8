@@ -27,7 +27,6 @@
 #include <openssl/err.h>
 #include <openssl/rsa.h>
 
-#include <assert.h>
 #include <jni.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -43,7 +42,7 @@ int OSSL102_RSA_set0_key(RSA *, BIGNUM *, BIGNUM *, BIGNUM *);
 int OSSL102_RSA_set0_factors(RSA *, BIGNUM *, BIGNUM *);
 int OSSL102_RSA_set0_crt_params(RSA *, BIGNUM *, BIGNUM *, BIGNUM *);
 
-//Type definitions of function pointers
+//Type definitions for function pointers
 typedef char * OSSL_error_string_t(unsigned long, char *);
 typedef char * OSSL_error_string_n_t(unsigned long, char *, size_t);
 typedef unsigned long OSSL_get_error_t();
@@ -146,8 +145,8 @@ static void printErrors(void) {
     while(0 != (errCode = (*OSSL_get_error)()))
     {
         char err_str[120];
-        char *err = (*OSSL_error_string_n)(errCode, err_str, (sizeof(err_str) / sizeof(char)));
-        printf("%s\n", err);
+        (*OSSL_error_string_n)(errCode, err_str, (sizeof(err_str) / sizeof(char)));
+        fprintf(stderr, "%s\n", err_str);
     }
     fflush(stderr);
 }
@@ -225,7 +224,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_sha384 = (OSSL_sha_t*)find_crypto_symbol(handle, "EVP_sha384");
     OSSL_sha512 = (OSSL_sha_t*)find_crypto_symbol(handle, "EVP_sha512");
 
-    if (ossl_ver == 1) {
+    if (1 == ossl_ver) {
         OSSL_MD_CTX_new = (OSSL_MD_CTX_new_t*)find_crypto_symbol(handle, "EVP_MD_CTX_new");
         OSSL_MD_CTX_reset = (OSSL_MD_CTX_reset_t*)find_crypto_symbol(handle, "EVP_MD_CTX_reset");
         OSSL_MD_CTX_free = (OSSL_MD_CTX_free_t*)find_crypto_symbol(handle, "EVP_MD_CTX_free");
@@ -261,7 +260,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     //Load the functions symbols for Openssl RSA algorithm.
     OSSL_RSA_new = (OSSL_RSA_new_t*)find_crypto_symbol(handle, "RSA_new");
 
-    if (ossl_ver == 1) {
+    if (1 == ossl_ver) {
         OSSL_RSA_set0_key = (OSSL_RSA_set0_key_t*)find_crypto_symbol(handle, "RSA_set0_key");
         OSSL_RSA_set0_factors = (OSSL_RSA_set0_factors_t*)find_crypto_symbol(handle, "RSA_set0_factors");
         OSSL_RSA_set0_crt_params = (OSSL_RSA_set0_key_t*)find_crypto_symbol(handle, "RSA_set0_crt_params");
@@ -359,7 +358,7 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_DigestCreateCon
             return -1;
     }
 
-    if ((ctx = (*OSSL_MD_CTX_new)()) == NULL) {
+    if (NULL == (ctx = (*OSSL_MD_CTX_new)())) {
         printErrors();
         return -1;
     }
@@ -950,17 +949,17 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_GCMDecrypt
     const EVP_CIPHER* evp_gcm_cipher = NULL;
 
     keyNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, key, 0));
-    if (keyNative == NULL)
+    if (NULL == keyNative)
         return -1;
 
     ivNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, iv, 0));
-    if (ivNative == NULL) {
+    if (NULL == ivNative) {
         (*env)->ReleasePrimitiveArrayCritical(env, key, keyNative, JNI_ABORT);
         return -1;
     }
 
     outputNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, output, 0));
-    if (outputNative == NULL) {
+    if (NULL == outputNative) {
         (*env)->ReleasePrimitiveArrayCritical(env, key, keyNative, JNI_ABORT);
         (*env)->ReleasePrimitiveArrayCritical(env, iv, ivNative, JNI_ABORT);
         return -1;
@@ -968,7 +967,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_GCMDecrypt
 
     if (inLen > 0) {
         inputNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, input, 0));
-        if (inputNative == NULL) {
+        if (NULL == inputNative) {
             (*env)->ReleasePrimitiveArrayCritical(env, key, keyNative, JNI_ABORT);
             (*env)->ReleasePrimitiveArrayCritical(env, iv, ivNative, JNI_ABORT);
             (*env)->ReleasePrimitiveArrayCritical(env, output, outputNative, JNI_ABORT);
@@ -978,7 +977,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_GCMDecrypt
 
     if (aadLen > 0) {
         aadNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, aad, 0));
-        if (aadNative == NULL) {
+        if (NULL == aadNative) {
             (*env)->ReleasePrimitiveArrayCritical(env, key, keyNative, JNI_ABORT);
             (*env)->ReleasePrimitiveArrayCritical(env, iv, ivNative, JNI_ABORT);
             (*env)->ReleasePrimitiveArrayCritical(env, output, outputNative, JNI_ABORT);
@@ -1143,17 +1142,17 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
     unsigned char* nNative = NULL;
     unsigned char* eNative = NULL;
     RSA* publicRSAKey = NULL;
-    BIGNUM* nBN = NULL; 
+    BIGNUM* nBN = NULL;
     BIGNUM* eBN = NULL;
     int ret = 0;
 
     nNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, n, 0));
-    if (nNative == NULL) {
+    if (NULL == nNative) {
         return -1;
     }
 
     eNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, e, 0));
-    if (eNative == NULL) {
+    if (NULL == eNative) {
         (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, JNI_ABORT);
         return -1;
     }
@@ -1163,7 +1162,7 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
     nBN = convertJavaBItoBN(nNative, nLen);
     eBN = convertJavaBItoBN(eNative, eLen);
 
-    if (publicRSAKey == NULL || nBN == NULL || eBN == NULL) {
+    if ((NULL == publicRSAKey) || (NULL == nBN) || (NULL == eBN)) {
         (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, JNI_ABORT);
         (*env)->ReleasePrimitiveArrayCritical(env, e, eNative, JNI_ABORT);
         return -1;
@@ -1174,7 +1173,7 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_createRSAPublic
     (*env)->ReleasePrimitiveArrayCritical(env, n, nNative, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, e, eNative, JNI_ABORT);
 
-    if (ret == 0) {
+    if (0 == ret) {
         return -1;
     }
 
@@ -1379,12 +1378,12 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_RSAEP
     int msg_len = 0;
 
     kNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, k, 0));
-    if (kNative == NULL) {
+    if (NULL == kNative) {
         return -1;
     }
 
     mNative = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, m, 0));
-    if (mNative == NULL) {
+    if (NULL == mNative) {
         (*env)->ReleasePrimitiveArrayCritical(env, k, kNative, JNI_ABORT);
         return -1;
     }
@@ -1540,19 +1539,19 @@ int OSSL102_RSA_set0_key(RSA *r2, BIGNUM *n, BIGNUM *e, BIGNUM *d)
      * parameters MUST be non-NULL for n and e.  d may be
      * left NULL (in case only the public key is used).
      */
-    if ((r->n == NULL && n == NULL)
-        || (r->e == NULL && e == NULL))
+    if ((NULL == r->n && NULL == n)
+        || (NULL == r->e && NULL == e))
         return 0;
 
-    if (n != NULL) {
+    if (NULL != n) {
         (*OSSL_BN_free)(r->n);
         r->n = n;
     }
-    if (e != NULL) {
+    if (NULL != e) {
         (*OSSL_BN_free)(r->e);
         r->e = e;
     }
-    if (d != NULL) {
+    if (NULL != d) {
         (*OSSL_BN_free)(r->d);
         r->d = d;
     }
@@ -1566,15 +1565,15 @@ int OSSL102_RSA_set0_factors(RSA *r2, BIGNUM *p, BIGNUM *q)
     /* If the fields p and q in r are NULL, the corresponding input
      * parameters MUST be non-NULL.
      */
-    if ((r->p == NULL && p == NULL)
-        || (r->q == NULL && q == NULL))
+    if ((NULL == r->p && NULL == p)
+        || (NULL == r->q && NULL == q))
         return 0;
 
-    if (p != NULL) {
+    if (NULL != p) {
         (*OSSL_BN_free)(r->p);
         r->p = p;
     }
-    if (q != NULL) {
+    if (NULL != q) {
         (*OSSL_BN_free)(r->q);
         r->q = q;
     }
@@ -1588,20 +1587,20 @@ int OSSL102_RSA_set0_crt_params(RSA *r2, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqm
     /* If the fields dmp1, dmq1 and iqmp in r are NULL, the corresponding input
      * parameters MUST be non-NULL.
      */
-    if ((r->dmp1 == NULL && dmp1 == NULL)
-        || (r->dmq1 == NULL && dmq1 == NULL)
-        || (r->iqmp == NULL && iqmp == NULL))
+    if ((NULL == r->dmp1 && NULL == dmp1)
+        || (NULL == r->dmq1 && NULL == dmq1)
+        || (NULL == r->iqmp && NULL == iqmp))
         return 0;
 
-    if (dmp1 != NULL) {
+    if (NULL != dmp1) {
         (*OSSL_BN_free)(r->dmp1);
         r->dmp1 = dmp1;
     }
-    if (dmq1 != NULL) {
+    if (NULL != dmq1) {
         (*OSSL_BN_free)(r->dmq1);
         r->dmq1 = dmq1;
     }
-    if (iqmp != NULL) {
+    if (NULL != iqmp) {
         (*OSSL_BN_free)(r->iqmp);
         r->iqmp = iqmp;
     }
